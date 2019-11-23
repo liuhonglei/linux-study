@@ -1,0 +1,54 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+
+startx 打开图形用户界面
+locale 查看使用语言
+LANG=en_US.UTF-8 设置语言
+date   查看日期
+cal    查看日历
+使用：
+	cal +%Y%m%d
+bc     计算器
+使用：
+	scale=3 设置小数位
+
+【Tab】键命令补全 文件补全 命令参数选项补全  功能
+ca【Tab】【Tab】
+
+ls -al ~/.bash【Tab】【Tab】
+
+date --【Tab】【Tab】 
+
+bash-completion软件，主动侦测各个命令可以下达的选项和参数
+
+ctrl+c 中断指令
+ctrl+d  离开文字接口 相当于exit
+
+shift+ Pageup或pagedown  翻页
+
+date --help 命令帮助
+
+man date 查询操作的简要说明
+
+man -f  和 whatis等效
+
+man -k  和 apropos等效
+
+以root身份下达mandb
+
+who    查看谁在线
+netstat -a  查看网络情况
+ps -aux  查看背景执行程序
+
+shutdown  关机
+reboot    重启
+sync      将数据写入硬盘中
+
+halt      关机
+poweroff  关机  
+
+实际使用systemctl 关机
