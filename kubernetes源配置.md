@@ -128,10 +128,16 @@ kubectl delete secret kubernetes-dashboard-key-holder --namespace=kube-system
 
 反正最后是把dashboard相关的pod ，serivce， deployment 等全部删除了。期间还执行过secret生成之类的。
 
-期间还创建了 k8s-admin.yaml,内容如下：
+https://blog.csdn.net/qq_38900565/article/details/100729686
+
+
+
+创建管理员角色
 
 ```
-piVersion: v1
+创建kubernetes-dashboard管理员角色
+[root@k8s-master ~]# vi k8s-admin.yaml
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: dashboard-admin
@@ -150,7 +156,31 @@ roleRef:
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 
+[root@k8s-master ~]# kubectl create -f k8s-admin.yaml
 ```
+
+获取dashboard管理员角色token
+
+```
+获取dashboard管理员角色token
+[root@k8s-master ~]# kubectl describe secret dashboard-admin-token-7z6zm -n kube-system     
+Name:         dashboard-admin-token-7z6zm
+Namespace:    kube-system
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: dashboard-admin
+              kubernetes.io/service-account.uid: f0d1d33f-d43d-11e9-a75a-fa163e7d0486
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkYXNoYm9hcmQtYWRtaW4tdG9rZW4tN3o2em0iLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGFzaGJvYXJkLWFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZjBkMWQzM2YtZDQzZC0xMWU5LWE3NWEtZmExNjNlN2QwNDg2Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmUtc3lzdGVtOmRhc2hib2FyZC1hZG1pbiJ9.Jmws1PEvnjG4fmR2YoZTV909dvPwJdRTi_KSkUnezA1i1GBd7YHpIjw_MmVj8Vx-C4dE83OPPqS2UIdslJQV-KsAYQNOMaPxhxOz4WRgIzEcxpOXMEKny93AGB6PcpQrmtNnmnwGEX8wF-dqogqoyH-8X-iDdpQ75-TbrVmco-NZtb7GMGKiTnBK_cRZ2iGg-Oq4ic7YoJpM0C1a87xNb4kOfUCIShj1JqWJTdoMtvjiCSTvjBVz8mICvQ9qMrJfxCZZJ6BjNNvMDqrd2cWKu14mjDo_hipt6DBcKSZDmp-jBCccx4RG_9CGpp6UyeFWVuEvDxeN8ABkX6RB74s3hw
+ca.crt:     1025 bytes
+namespace:  11 bytes
+
+```
+
+
 
 基本删除干净后，有重新在cnblogs找了dashboard.yaml文件，地址如下 https://www.cnblogs.com/aguncn/p/10904822.html。将该dashboard.yaml下载下来后，只是将镜像名改为李振良老师的镜像地址。然后执行 
 
