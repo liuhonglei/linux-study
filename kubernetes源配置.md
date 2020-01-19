@@ -65,3 +65,97 @@ mkdir -p $HOME/.kube
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
+## 安装pod网络插件
+
+```
+kubectl apply -fhttps://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+```
+
+## 加入集群节点
+
+在节点机器上执行如下命令，加入集群
+
+```
+kubeadm join 192.168.0.65:6443 --token c1nse1.o6g9zyxlnn8445od --discovery-token-ca-cert-hash sha256:92b39175b8707c6a86c97db9372f4e125af4e69f9a169a9630f5953381aa9850
+```
+
+## 集群测试
+
+```
+//创建nginx
+kubectl delete service nginx
+//暴露端口
+kubectl expose deployment nginx --port=80 --type=NodePort
+//查看pods 和services
+kubectl get pods, svc
+```
+
+## 安装dashboard
+
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
+```
+
+## 部署这个dashboard太他妈蛋疼了
+
+- 首先，官方给出的dashboard.yaml无法下载。在网上查了下，好像需要梯子。没有办法，找其他资源。
+
+  找到了csdn上一个文章，地址如下：https://blog.csdn.net/qq_40460909/article/details/85123605。下载完作者的kubernetes-dashboard.yaml, 将镜像地址 `k8s.gcr.io``/kubernetes-dashboard-amd64``:v1.8.3`改为了李振良老师的镜像地址 lizhenliang/kubernetes-dashboard-amd64:v1.10.1。
+
+  后按照视频教程去处理
+
+  ```
+  kubectl apply -f kubernetes-dashboard.yaml
+  ```
+
+  但是教程结果是  需要进行配置kubeconfig和 令牌的页面不同，而我的页面是类似这种界面![](G:\linux\linux学习\20181220153258533.jpg)
+
+无法按照教程去处理了，无奈之下只有删除已经创建的dashboard。
+
+```
+kubectl get secret,sa,role,rolebinding,services,deployments --namespace=kube-system | grep dashboard
+kubectl delete deployment kubernetes-dashboard --namespace=kube-system 
+kubectl delete service kubernetes-dashboard  --namespace=kube-system 
+kubectl delete role kubernetes-dashboard-minimal --namespace=kube-system 
+kubectl delete rolebinding kubernetes-dashboard-minimal --namespace=kube-system
+kubectl delete sa kubernetes-dashboard --namespace=kube-system 
+kubectl delete secret kubernetes-dashboard-certs --namespace=kube-system
+kubectl delete secret kubernetes-dashboard-key-holder --namespace=kube-system
+```
+
+反正最后是把dashboard相关的pod ，serivce， deployment 等全部删除了。期间还执行过secret生成之类的。
+
+期间还创建了 k8s-admin.yaml,内容如下：
+
+```
+piVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dashboard-admin
+  namespace: kube-system
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: dashboard-admin
+subjects:
+  - kind: ServiceAccount
+    name: dashboard-admin
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+```
+
+基本删除干净后，有重新在cnblogs找了dashboard.yaml文件，地址如下 https://www.cnblogs.com/aguncn/p/10904822.html。将该dashboard.yaml下载下来后，只是将镜像名改为李振良老师的镜像地址。然后执行 
+
+```
+kubectl apply -f kubernetes-dashboard.yaml
+```
+
+然后他妈的居然好了，连教程里的kubeconfig和令牌都不用配了。
