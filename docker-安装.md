@@ -67,6 +67,8 @@ sudo yum install docker-ce
 # Start docker service
 systemctl enable docker
 systemctl start docker
+
+
 ```
 
 国外镜像太慢，配置阿里云镜像加速
