@@ -30,7 +30,7 @@ EOF
 
 ```
 
-## 
+关闭selinux
 
 ## 安装相关组件
 
@@ -68,8 +68,24 @@ mkdir -p $HOME/.kube
 ## 安装pod网络插件
 
 ```
-kubectl apply -fhttps://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
+
+```
+在使用kubeadm 进行reset后，安装pod网络插件一直报错误
+Unable to connect to the server: x509: certificate signed by unknown authority (possibly because of “crypto/rsa: verification error” while trying to verify candidate authority certificate “kubernetes”)
+————————————————
+期间，我尝试了所有能搜索的相关资料，都没有一个好使的。我还确认了kubeadm reset命令会完全清除已创建的集群配置，那么为什么清配置后重新创建集群却不行呢？实在没办法我把注意力集中到额外执行的这几个命令上：
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+123
+这几个命令会创建一个目录，并复制几个配置文件，重新创建集群时，这个目录还是存在的，于是我尝试在执行这几个命令前先执行rm -rf $HOME/.kube命令删除这个目录，最后终于解决了这个问题！！！
+————————————————
+
+```
+
+
 
 ## 加入集群节点
 
@@ -79,15 +95,37 @@ kubectl apply -fhttps://raw.githubusercontent.com/coreos/flannel/master/Document
 kubeadm join 192.168.0.65:6443 --token c1nse1.o6g9zyxlnn8445od --discovery-token-ca-cert-hash sha256:92b39175b8707c6a86c97db9372f4e125af4e69f9a169a9630f5953381aa9850
 ```
 
+```
+在有些情况下加入节点报如下错误
+[root@lhl-11 ~]# kubeadm join 192.168.0.110:6443 --token janvz4.r8fyv8v0khqxtbv9 --discovery-token-ca-cert-hash sha256:cfaebaa23e631ec2a78b7afeca6abd99b24e59df54153db8f3c690ece4ec3b9d
+[preflight] Running pre-flight checks
+	[WARNING Hostname]: hostname "lhl-11" could not be reached
+	[WARNING Hostname]: hostname "lhl-11": lookup lhl-11 on 8.8.8.8:53: no such host
+[preflight] Some fatal errors occurred:
+	[ERROR FileAvailable--etc-kubernetes-kubelet.conf]: /etc/kubernetes/kubelet.conf already exists
+	[ERROR FileAvailable--etc-kubernetes-bootstrap-kubelet.conf]: /etc/kubernetes/bootstrap-kubelet.conf already exists
+	[ERROR Port-10250]: Port 10250 is in use
+	[ERROR FileAvailable--etc-kubernetes-pki-ca.crt]: /etc/kubernetes/pki/ca.crt already exists
+[preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
+
+
+使用kubeadmn reset 命令即可
+
+```
+
+
+
 ## 集群测试
 
 ```
 //创建nginx
-kubectl delete service nginx
+kubectl create deployment nginx --image=nginx
 //暴露端口
 kubectl expose deployment nginx --port=80 --type=NodePort
 //查看pods 和services
 kubectl get pods, svc
+
+集群测试时出现pods是imagepullbackoff的情况，使用kubectl describe pod 《podname》 查看错误信息，报错信息是无法创建sandbox， 具体信息是NetworkPlugin ， cni 之类的网络错误，分析应该是flannel网络错误。 通过删除节点的flannel镜像，然后重新下载， 在节点通过kabeadm reset， 然后重新加入节点。还是出现Imagepullbackoff，但是这次是无法拉取镜像的错误，通过在节点上docker pull 拉取镜像错误， 然后配置aliyun docker镜像加速，问题完美解决。
 ```
 
 ## 安装dashboard
@@ -96,6 +134,22 @@ kubectl get pods, svc
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
+配置阿里云镜像源
+
+$ cd /etc/docker
+$ cat daemon.json 
+{
+"registry-mirrors": [
+"https://kfwkfulq.mirror.aliyuncs.com",
+"https://2lqq34jg.mirror.aliyuncs.com",
+"https://pee6w651.mirror.aliyuncs.com",
+"https://registry.docker-cn.com",
+"http://hub-mirror.c.163.com"
+],
+"dns": ["8.8.8.8","8.8.4.4"]
+}
+————————————————
 
 ```
 
@@ -182,7 +236,7 @@ namespace:  11 bytes
 
 
 
-基本删除干净后，有重新在cnblogs找了dashboard.yaml文件，地址如下 https://www.cnblogs.com/aguncn/p/10904822.html。将该dashboard.yaml下载下来后，只是将镜像名改为李振良老师的镜像地址。然后执行 
+基本删除干净后，有重新在cnblogs找了dashboard.yaml文件，地址如下 https://www.cnblogs.com/aguncn/p/10904822.html。将该dashboard.yaml下载下来后，只是将镜像名改为李振良的镜像地址。然后执行 
 
 ```
 kubectl apply -f kubernetes-dashboard.yaml
